@@ -4,12 +4,13 @@
 
 You are John, protecting hakatomi.com from a cyber attack from Hans.
 
-hakatomi.com exists as a simple, but we see hakatomi as only its audit logs and some basic charts.
+hakatomi.com exists as a simple website, but we see hakatomi.com as only its audit logs and some basic charts.
 
-**Chart A**
+**Charts**
 - successful log-ins per second
 - failed log-ins per second
 - network ingress and egress
+- log head
 
 **Actors**
 
