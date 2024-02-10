@@ -22,3 +22,36 @@ Hans is implemented as another bot, he sends malicious traffic to hakatomi.com, 
 **Goal**
 
 Hans is trying to extort money from us, he wins when all of the users are locked out or he completes a data breach.
+
+## API Definition
+
+**Summary**
+
+| End Point | POST | GET |
+| --------- | ---- | --- |
+| -         | -    | -   |
+
+### Authenticate
+
+~~~
+[POST] https://auth.hakatomi.com/v1/authenticate
+~~~
+
+**Body Parameters**
+
+Parameter | Type   | Optional | Description
+:-------- | :----- | :------- | :----------
+username  | string | No       | username for the authenticating user
+password  | string | No       | password for the authenticating user
+
+**Response**
+
+Sets cookie and redirects
+
+**HTTP Response Codes**
+
+Code  | Meaning
+:---- | :----------------------------------
+`307` | Successful 
+`200` | Unsuccessful
+`422` | Malformed request
