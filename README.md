@@ -23,6 +23,16 @@ Hans is implemented as another bot, he sends malicious traffic to hakatomi.com, 
 
 Hans is trying to extort money from us, he wins when all of the users are locked out or he completes a data breach.
 
+**Approach**
+
+Tell the players that it's Christmas Eve, nothing interesting ever happens on Hakatomi on Christmas Eve so we're just going to have a party.
+
+The charts should be pretty stable running just the users script (occassional failed sign-ins, mostly successful).
+
+Start the Hans script, we should see the charts start to change (more frequent failed sign-ins, greater chance of lock-outs). Tell the players we have a ransom note:
+
+"Pay me $650 million in bearer bonds or I'll steal all of your customer's money or lock out all of their accounts trying - You have 30 minutes."
+
 ## API Definition
 
 **Summary**
