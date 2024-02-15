@@ -1,44 +1,101 @@
-from api.models import UserModel
-from api.adapters import database
-from api.adapters import logging
+import os
+import sys
+
+sys.path.insert(1, os.path.join(sys.path[0], "../../.."))
+
 import duckdb
+from api.drivers.password import generate_password_hash
+from api.exceptions import (
+    AccountLockedError,
+    InvalidAuthenticationError,
+    UserDoesntExistError,
+)
 
-def _get_connection():
-    conn = duckdb.connect(database="hakatomi.duckdb")
-    cur = conn.cursor()
-    res = cur.execute(CREATE_DB)
-    res.commit()
-    cur.close()
-
-def reset_database():
-    pass
+DATABASE: str = "hakatomi.duckdb"
 
 
-def get_user(username: str) -> UserModel:
+def _get_user(username: str) -> dict:
 
-    username: str
-    failed_sign_in_attempts: int = 0
-    account_balance: decimal.Decimal = decimal.Decimal("0.0")
+    sql = f"""
+SELECT *
+  FROM user_table 
+ WHERE username LIKE '{username}';
+"""
+    conn = duckdb.connect(database=DATABASE)
+    cursor = conn.cursor()
+    cursor.execute(sql)
 
-    SQL = "SELECT username, failed_sign_in_attempts FROM user_table WHERE username LIKE "
+    match = cursor.fetchone()
+    if match is None:
+        return None
+
+    # Fetch column names
+    columns = [description[0] for description in cursor.description]
+
+    # Convert tuple to dictionary using column names
+    user_dict = dict(zip(columns, match))
+
+    return user_dict
 
 
-def update_user(user):
-    pass
+def _update_user(user):
+
+    # Create the SET part of the SQL statement, excluding 'username'
+    set_part = ", ".join(
+        [
+            f"{key} = '{value}'" if isinstance(value, str) else f"{key} = {value}"
+            for key, value in user.items()
+            if key not in ("username", "id")
+        ]
+    )
+
+    sql = f"""
+UPDATE user_table 
+   SET {set_part}
+ WHERE username LIKE '{user['username']}';
+"""
+    print(sql)
+
+    conn = duckdb.connect(database=DATABASE)
+    cursor = conn.cursor()
+    cursor.execute(sql)
+    cursor.commit()
 
 
 def authenticate_user(username: str, password: str) -> bool:
-    user = get_user(username)
+    user = _get_user(username)
+    print(user)
+    if user is None:
+        raise UserDoesntExistError(username)
+
+    if user["failed_sign_in_attempts"] >= 3:
+        raise AccountLockedError(username)
 
     # sign-in test
-    successful = True
+    password_hash = generate_password_hash(password, user["salt"])
+    if password_hash != user["password"]:
+        user["failed_sign_in_attempts"] += 1
+        _update_user(user)
+        raise InvalidAuthenticationError(username)
 
-    if successful:
-        user.failed_sign_in_attempts = 0
-    else:
-        user.failed_sign_in_attempts += 1
-    database_adapter.update_user(user)
+    user["failed_sign_in_attempts"] = 0
+    _update_user(user)
 
 
 def get_signin_stats():
-    pass
+    sql = f"""
+SELECT COUNT(*), failed_sign_in_attempts
+  FROM user_table 
+ GROUP BY failed_sign_in_attempts
+"""
+    conn = duckdb.connect(database="hakatomi.duckdb")
+    cursor = conn.cursor()
+    cursor.execute(sql)
+
+    match = cursor.arrow()
+    return match.to_pydict()
+
+
+print(_get_user("97a5ef5247c4ba7c"))
+print(get_signin_stats())
+print(authenticate_user("97a5ef5247c4ba7c", ""))

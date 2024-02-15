@@ -1,5 +1,7 @@
 import hashlib
+
 from orso.tools import random_string
+
 
 def generate_password_hash(password: str, salt: str, iterations: int = 100) -> str:
     """
@@ -30,6 +32,7 @@ def generate_password_hash(password: str, salt: str, iterations: int = 100) -> s
     final_hash = hash_obj.hexdigest()
 
     return final_hash
+
 
 def generate_password():
     return random_string()

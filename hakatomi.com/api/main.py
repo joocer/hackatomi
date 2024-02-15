@@ -1,9 +1,10 @@
-from argparse import ArgumentParser
-from fastapi import FastAPI
-import database_adapter
-import uvicorn
 import os
+from argparse import ArgumentParser
+
+import database_adapter
 import models
+import uvicorn
+from fastapi import FastAPI
 
 application = FastAPI()
 

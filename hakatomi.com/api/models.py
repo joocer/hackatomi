@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import decimal
+from dataclasses import dataclass
 
 
 @dataclass
@@ -11,5 +11,4 @@ class UserAuthenticationModel:
 @dataclass
 class UserModel:
     username: str
-    failed_sign_in_attempts: int = 0
     account_balance: decimal.Decimal = decimal.Decimal("0.0")

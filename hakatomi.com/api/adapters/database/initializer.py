@@ -3,15 +3,14 @@ import sys
 
 sys.path.insert(1, os.path.join(sys.path[0], "../../.."))
 
-from api.drivers.password import generate_password_hash
-from api.drivers.password import generate_password
-from api.drivers.usernames import generate_username
-
-from orso.tools import random_string
-from orso.tools import random_int
 import random
 
+from api.drivers.password import generate_password, generate_password_hash
+from api.drivers.usernames import generate_username
+from orso.tools import random_int, random_string
+
 USER_COUNT: int = 100
+
 
 def generate_user_record(index):
     username = generate_username()
@@ -32,9 +31,18 @@ def generate_user_record(index):
         print("username:", username)
         print("password:", password)
 
-    return (index, username, password_hash, salt, failed_sign_in_attempts, account_balance)
+    return (
+        index,
+        username,
+        password_hash,
+        salt,
+        failed_sign_in_attempts,
+        account_balance,
+    )
 
-CREATE_DB = """
+
+CREATE_DB = (
+    """
 CREATE TABLE user_table (
   id INTEGER PRIMARY KEY,
   username VARCHAR(32),
@@ -46,7 +54,10 @@ CREATE TABLE user_table (
 
 INSERT INTO user_table (id, username, password, salt, failed_sign_in_attempts, account_balance)
 VALUES 
-""" + "\n".join(str(generate_user_record(i)) + "," for i in range(USER_COUNT)) 
+"""
+    + ",\n".join(str(generate_user_record(i)) for i in range(USER_COUNT))
+    + ";"
+)
 
 
 def create_duck_db():
@@ -68,8 +79,9 @@ def create_duck_db():
     conn = duckdb.connect(database="hakatomi.duckdb")
     cur = conn.cursor()
     res = cur.execute(CREATE_DB)
-    res.commit()
+    print(res.commit().arrow())
     cur.close()
+
 
 print(CREATE_DB)
 create_duck_db()
