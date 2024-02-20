@@ -1,6 +1,8 @@
 import hashlib
+import os
+import sys
 
-from orso.tools import random_string
+sys.path.insert(1, os.path.join(sys.path[0], "../.."))
 
 
 def generate_password_hash(password: str, salt: str, iterations: int = 100) -> str:
@@ -34,5 +36,19 @@ def generate_password_hash(password: str, salt: str, iterations: int = 100) -> s
     return final_hash
 
 
-def generate_password():
-    return random_string()
+def generate_passwords(count: int = 100):
+    """
+    Select count number of passwords from the rockyou password file
+    """
+    from api.drivers import read_random_lines
+
+    return read_random_lines("assets/rockyou.txt", count)
+
+
+def generate_usernames(count: int = 100):
+    """
+    Select count number of usernames from a username file
+    """
+    from api.drivers import read_random_lines
+
+    return read_random_lines("assets/usernames.txt", count)

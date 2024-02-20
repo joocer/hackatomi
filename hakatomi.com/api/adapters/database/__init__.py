@@ -4,12 +4,13 @@ import sys
 sys.path.insert(1, os.path.join(sys.path[0], "../../.."))
 
 import duckdb
-from api.drivers.password import generate_password_hash
-from api.exceptions import (
-    AccountLockedError,
-    InvalidAuthenticationError,
-    UserDoesntExistError,
-)
+from drivers.creds import generate_password_hash
+from exceptions import AccountLockedError
+from exceptions import InvalidAuthenticationError
+from exceptions import UserDoesntExistError
+
+
+
 
 DATABASE: str = "hakatomi.duckdb"
 
@@ -54,7 +55,6 @@ UPDATE user_table
    SET {set_part}
  WHERE username LIKE '{user['username']}';
 """
-    print(sql)
 
     conn = duckdb.connect(database=DATABASE)
     cursor = conn.cursor()
@@ -64,7 +64,6 @@ UPDATE user_table
 
 def authenticate_user(username: str, password: str) -> bool:
     user = _get_user(username)
-    print(user)
     if user is None:
         raise UserDoesntExistError(username)
 
@@ -94,8 +93,3 @@ SELECT COUNT(*), failed_sign_in_attempts
 
     match = cursor.arrow()
     return match.to_pydict()
-
-
-print(_get_user("97a5ef5247c4ba7c"))
-print(get_signin_stats())
-print(authenticate_user("97a5ef5247c4ba7c", ""))
