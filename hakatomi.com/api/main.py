@@ -1,7 +1,12 @@
 import os
+import sys
+
+sys.path.insert(1, os.path.join(sys.path[0], "./hackatomi.com/"))
+
 from argparse import ArgumentParser
 
-import database_adapter
+from adapters import database
+from adapters import logging
 import models
 import uvicorn
 from fastapi import FastAPI
@@ -11,24 +16,29 @@ application = FastAPI()
 
 @application.post("/v1/authenticate")
 async def authenticate_user(user_auth: models.UserAuthenticationModel):
-    user = database_adapter.get_user(user_auth.username)
-    if user is None:
-        return "failed"
-    if user.failed_sign_in_attempts > 2:
-        return "failed"
 
-    try_authenticate = database_adapter.authenticate_user(
-        user_auth.username, user_auth.password
-    )
-    if not try_authenticate:
-        return "failed"
+    from exceptions import AccountLockedError
+    from exceptions import InvalidAuthenticationError
+    from exceptions import UserDoesntExistError
 
+    try:
+        database.authenticate_user(user_auth.username, user_auth.password)
+    except AccountLockedError:
+        logging.log("auth", user_auth.username, "hakatomi.com", "denied", cause="Account Locked")
+        return "locked"
+    except InvalidAuthenticationError:
+        logging.log("auth", user_auth.username, "hakatomi.com", "denied", cause="Password Incorrect")
+        return "password"
+    except UserDoesntExistError:
+        logging.log("auth", user_auth.username, "hakatomi.com", "denied", cause="Unknown User")
+        return "user"
+    logging.log("auth", user_auth.username, "hakatomi.com", "pass")
     return "okay"
 
 
 @application.get("/v1/measure/signin/success")
 async def get_measure_signin_success():
-    return {}
+    return database.get_signin_stats()
 
 
 if __name__ == "__main__":
@@ -37,8 +47,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.reset:
-        database_adapter.reset_database()
+        database.reset_database()
 
-    uvicorn.run(
-        "main:application", host="0.0.0.0", port=int(os.environ.get("PORT", 8080))
-    )
+    uvicorn.run("main:application", host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
