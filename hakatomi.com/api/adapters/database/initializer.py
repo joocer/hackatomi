@@ -32,11 +32,6 @@ def generate_user_record(index):
         failed_sign_in_attempts = 1
     account_balance = random_int() % 100000000 / 100
 
-    if index == 0:
-        print("Your test user is")
-        print("username:", username)
-        print("password:", password)
-
     return (
         index,
         username,
@@ -88,6 +83,10 @@ def create_duck_db():
     print(res.commit().arrow())
     cur.close()
 
+def create_user_file():
+    with open("assets/users.txt", "w") as uf:
+        for i in range(USER_COUNT):
+            uf.write(f"{usernames[i]}\t{passwords[i]}\n")
 
-print(CREATE_DB)
 create_duck_db()
+create_user_file()
