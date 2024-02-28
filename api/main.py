@@ -1,15 +1,15 @@
 import os
 import sys
+from argparse import ArgumentParser
+
+import models
+import uvicorn
+from adapters import database
+from adapters import logging
+from fastapi import FastAPI
 
 sys.path.insert(1, os.path.join(sys.path[0], "./hackatomi.com/"))
 
-from argparse import ArgumentParser
-
-from adapters import database
-from adapters import logging
-import models
-import uvicorn
-from fastapi import FastAPI
 
 application = FastAPI()
 
@@ -27,7 +27,9 @@ async def authenticate_user(user_auth: models.UserAuthenticationModel):
         logging.log("auth", user_auth.username, "hakatomi.com", "denied", cause="Account Locked")
         return "locked"
     except InvalidAuthenticationError:
-        logging.log("auth", user_auth.username, "hakatomi.com", "denied", cause="Password Incorrect")
+        logging.log(
+            "auth", user_auth.username, "hakatomi.com", "denied", cause="Password Incorrect"
+        )
         return "password"
     except UserDoesntExistError:
         logging.log("auth", user_auth.username, "hakatomi.com", "denied", cause="Unknown User")

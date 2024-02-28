@@ -1,29 +1,36 @@
 import os
 import random
 import sys
+import time
+from dataclasses import dataclass
+from typing import List
+
+import orjson
+import requests
+from orso.tools import random_string
 
 sys.path.insert(1, os.path.join(sys.path[0], "../hakatomi.com"))
 
 
-import requests
-import time
-import orjson
-from enum import Enum, auto
-from dataclasses import dataclass
-from typing import Optional, List
-import random
-from orso.tools import random_string
-
-
 @dataclass
-class User():
-    username:str
-    password:str
+class User:
+    username: str
+    password: str
+
+    def make_auth_payload(self):
+        if self.password is None:
+            password = "AAAA"
+        else:
+            password = self.password
+
+        return orjson.dumps({"username": self.username, "password": password})
+
 
 users = List[User]
 
-HAKATOMI_URL:str = "http://localhost:8080/v1/authenticate"
+HAKATOMI_URL: str = "http://localhost:8080/v1/authenticate"
 DWELL: int = 0.25
+
 
 def load_users():
     list_of_users = []
@@ -34,30 +41,22 @@ def load_users():
             list_of_users.append(user)
     return list_of_users
 
+
 def randomly_select_user() -> User:
     return random.choice(users)
-    
-def issue_request(user:User):
+
+
+def issue_request(user: User):
     attempt = requests.post(url=HAKATOMI_URL, data=user.make_auth_payload())
 
-    if attempt.text == '"user"':
-        user.status = UserStatus.invalid
-    elif attempt.text == '"locked"':
-        user.status = UserStatus.locked
-    elif attempt.text == '"password"':
-        user.status = UserStatus.active
-    elif attempt.status_code == 500:
-        pass
-    else:
-        print(attempt.text)
-        quit()
+    print(user.username.ljust(20), attempt.text)
 
     return attempt.status_code, attempt.text
+
 
 if __name__ == "__main__":
 
     users = load_users()
-    print(users)
 
     while True:
         time.sleep(random.random())
@@ -70,30 +69,8 @@ if __name__ == "__main__":
         if random.random() < 0.15:
             # 15% of the time, get the password wrong
             password = random_string(8)
-        
-        # attempt
-        print(username, password, user)
 
-        if False:
+        user_to_attempt = User(username, password)
 
+        issue_request(user_to_attempt)
 
-            # 50% of the time, attempt a new password user
-            user = randomly_select_user([UserStatus.unknown, UserStatus.active, UserStatus.new])
-            if user:
-                print(f"[{len(users)}] Trying {user.username}, who last time I checked was {user.status}.")
-                issue_request(user)
-
-            # 10% of the time, attempt new password for a already locked account
-            user = randomly_select_user([UserStatus.locked])
-            if user:
-                print(f"[{len(users)}] Trying {user.username}, who last time I checked was {user.status}.")
-                issue_request(user)
-
-            # 10% of the time, attempt a SQL injection
-            payload = randomly_select_sql_injection()
-            print("Trying SQL injection - ", payload)
-            user = User(username=payload)
-            status, message = issue_request(user)
-            if status != 500:
-                print("WORKED", status, message)
-            pass

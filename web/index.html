@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <!-- Bootstrap CSS CDN -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Additional styling to ensure the logs container scrolls */
+        .logs-container {
+            height: 200px; /* Adjust based on your needs */
+            overflow-y: scroll;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            <h4>Pie Chart</h4>
+            <!-- Placeholder for pie chart -->
+            <div id="pie-chart" style="height: 400px;">
+                <!-- Pie chart will be inserted here -->
+            </div>
+        </div>
+        <div class="col-md-6">
+            <h4>Logs</h4>
+            <!-- Container for scrolling logs -->
+            <div class="logs-container">
+                <!-- Sample logs -->
+                <p>Log entry 1</p>
+                <p>Log entry 2</p>
+                <p>Log entry 3</p>
+                <!-- Add more log entries as needed -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap and jQuery (Required for Bootstrap's JavaScript plugins) -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>

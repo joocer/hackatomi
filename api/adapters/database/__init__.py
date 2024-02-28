@@ -1,15 +1,13 @@
 import os
 import sys
 
-sys.path.insert(1, os.path.join(sys.path[0], "../../.."))
-
 import duckdb
 from drivers.creds import generate_password_hash
 from exceptions import AccountLockedError
 from exceptions import InvalidAuthenticationError
 from exceptions import UserDoesntExistError
 
-
+sys.path.insert(1, os.path.join(sys.path[0], "../../.."))
 
 
 DATABASE: str = "hakatomi.duckdb"

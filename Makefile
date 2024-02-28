@@ -8,30 +8,16 @@ lint:
 update:
 	python -m pip install --upgrade pip
 	python -m pip install --upgrade -r requirements.txt
-	python -m pip install --upgrade -r tests/requirements.txt
 
-t:
+run-bonnie:
 	clear
-	python tests/sql_battery/test_shapes_and_errors_battery.py
+	python /Users/justin/Nextcloud/mabel/hakatomi/bonnie/bonnie.py
 
-b:
+run-gruber:
 	clear
-	python scratch/brace.py
+	python /Users/justin/Nextcloud/mabel/hakatomi/gruber/gruber.py
 
-test:
+run-web:
 	clear
-	export MANUAL_TEST=1
-	python -m pytest
-
-mypy:
-	clear
-	mypy --ignore-missing-imports --python-version 3.10 --no-strict-optional --check-untyped-defs opteryx
-
-coverage:
-	clear
-	export MANUAL_TEST=1
-	python -m coverage run -m pytest 
-	python -m coverage report --include=opteryx/** -m
-
-compile:
-	python setup.py build_ext --inplace
+	cd /Users/justin/Nextcloud/mabel/hakatomi/web
+	python -m http.server 8085

@@ -2,13 +2,13 @@ import os
 import random
 import sys
 
-sys.path.insert(1, os.path.join(sys.path[0], "../../.."))
-
 from api.drivers.creds import generate_password_hash
 from api.drivers.creds import generate_passwords
 from api.drivers.creds import generate_usernames
 from orso.tools import random_int
 from orso.tools import random_string
+
+sys.path.insert(1, os.path.join(sys.path[0], "../../.."))
 
 
 USER_COUNT: int = 100
@@ -83,10 +83,12 @@ def create_duck_db():
     print(res.commit().arrow())
     cur.close()
 
+
 def create_user_file():
     with open("assets/users.txt", "w") as uf:
         for i in range(USER_COUNT):
             uf.write(f"{usernames[i]}\t{passwords[i]}\n")
+
 
 create_duck_db()
 create_user_file()
