@@ -79,9 +79,23 @@ def authenticate_user(username: str, password: str) -> bool:
     _update_user(user)
 
 
+def reset_user(username: str, password: str) -> bool:
+    user = _get_user(username)
+    if user is None:
+        raise UserDoesntExistError(username)
+
+    # sign-in test
+    password_hash = generate_password_hash(password, user["salt"])
+    user["password"] = password_hash
+    user["failed_sign_in_attempts"] = 0
+    _update_user(user)
+
+    return True
+
+
 def get_signin_stats():
     sql = f"""
-SELECT COUNT(*), failed_sign_in_attempts
+SELECT COUNT(*) AS count, failed_sign_in_attempts AS attempts
   FROM user_table 
  GROUP BY failed_sign_in_attempts
 """

@@ -21,3 +21,7 @@ run-web:
 	clear
 	cd /Users/justin/Nextcloud/mabel/hakatomi/web
 	python -m http.server 8085
+
+run-api:
+	clear
+	python /Users/justin/Nextcloud/mabel/hakatomi/api/main.py

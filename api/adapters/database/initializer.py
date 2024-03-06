@@ -1,6 +1,7 @@
 import os
 import random
 import sys
+sys.path.insert(1, os.path.join(sys.path[0], "../../.."))
 
 from api.drivers.creds import generate_password_hash
 from api.drivers.creds import generate_passwords
@@ -8,14 +9,13 @@ from api.drivers.creds import generate_usernames
 from orso.tools import random_int
 from orso.tools import random_string
 
-sys.path.insert(1, os.path.join(sys.path[0], "../../.."))
 
 
-USER_COUNT: int = 100
+USER_COUNT: int = 50
 
 # bulk create the creds
-passwords = generate_passwords(USER_COUNT) + ["password"]
-usernames = generate_usernames(USER_COUNT) + ["root"]
+passwords = generate_passwords(USER_COUNT)
+usernames = generate_usernames(USER_COUNT)
 
 
 def generate_user_record(index):
@@ -56,7 +56,7 @@ CREATE TABLE user_table (
 INSERT INTO user_table (id, username, password, salt, failed_sign_in_attempts, account_balance)
 VALUES 
 """
-    + ",\n".join(str(generate_user_record(i)) for i in range(USER_COUNT + 1))
+    + ",\n".join(str(generate_user_record(i)) for i in range(USER_COUNT))
     + ";"
 )
 

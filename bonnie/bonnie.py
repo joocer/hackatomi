@@ -19,16 +19,17 @@ class User:
 
     def make_auth_payload(self):
         if self.password is None:
-            password = "AAAA"
+            passwrd = "AAAA"
         else:
-            password = self.password
+            passwrd = self.password
 
-        return orjson.dumps({"username": self.username, "password": password})
+        return orjson.dumps({"username": self.username, "password": passwrd})
 
 
 users = List[User]
 
 HAKATOMI_URL: str = "http://localhost:8080/v1/authenticate"
+RESET_URL: str = "http://localhost:8080/v1/user/reset"
 DWELL: int = 0.25
 
 
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     users = load_users()
 
     while True:
-        time.sleep(random.random())
+        time.sleep(random.random() * 5)
         user = random.choice(users)
         username = user.username
         password = user.password
@@ -72,5 +73,9 @@ if __name__ == "__main__":
 
         user_to_attempt = User(username, password)
 
-        issue_request(user_to_attempt)
+        code, text = issue_request(user_to_attempt)
+
+        if text == '"locked"' and random.random() < 0.01:
+            print("resetting user", user.username)
+            attempt = requests.post(url=RESET_URL, data=user.make_auth_payload())
 

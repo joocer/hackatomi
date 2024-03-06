@@ -1,13 +1,10 @@
 import hashlib
-import os
-import sys
-
-sys.path.insert(1, os.path.join(sys.path[0], "../.."))
 
 
 def generate_password_hash(password: str, salt: str, iterations: int = 100) -> str:
     """
-    Generate a SHA-256 hash of the given password and salt, using multiple iterations to increase complexity.
+    Generate a SHA-256 hash of the given password and salt, using multiple
+    iterations to increase complexity.
 
     Parameters:
         password: str
@@ -15,7 +12,8 @@ def generate_password_hash(password: str, salt: str, iterations: int = 100) -> s
         salt: str
             The salt to use in hashing.
         iterations: int, optional
-            The number of hashing iterations to perform for added complexity (default is 100).
+            The number of hashing iterations to perform for added complexity
+            (default is 100).
 
     Returns:
         str: A hexadecimal string representing the final SHA-256 hash.

