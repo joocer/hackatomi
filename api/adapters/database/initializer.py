@@ -45,12 +45,14 @@ def generate_user_record(index):
 CREATE_DB = (
     """
 CREATE TABLE user_table (
-  id INTEGER PRIMARY KEY,
-  username VARCHAR(32),
-  password VARCHAR(64),
-  salt VARCHAR(16),
-  failed_sign_in_attempts INTEGER,
-  account_balance DECIMAL(14, 2)
+  id                        INTEGER PRIMARY KEY,
+  username                  VARCHAR(32),
+  password                  VARCHAR(64),
+  salt                      VARCHAR(16),
+  failed_sign_in_attempts   INTEGER,
+  account_balance           DECIMAL(14, 2),
+  last_sign_in              TIMESTAMP,
+  last_failed_sign_in       TIMESTAMP
 );
 
 INSERT INTO user_table (id, username, password, salt, failed_sign_in_attempts, account_balance)

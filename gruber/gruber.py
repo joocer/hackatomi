@@ -19,7 +19,6 @@ import orjson
 import requests
 from api.drivers import read_random_lines
 from api.drivers.creds import generate_usernames
-from api.drivers.creds import generate_passwords
 from orso.tools import random_string
 
 sys.path.insert(1, os.path.join(sys.path[0], "../hakatomi.com"))
@@ -49,6 +48,10 @@ class User:
         return orjson.dumps({"username": self.username, "password": password})
 
 
+
+
+CODE = [("A", 4), ("B", 2), ("A", 3)]
+
 HAKATOMI_URL: str = "http://localhost:8080/v1/authenticate"
 DWELL: float = 0.2
 INJECTION_PROBABILITY: float = 0.05
@@ -59,6 +62,20 @@ users = {}
 sql_injections = []
 potential_sql_injections = []
 
+states = {
+    "seen_429": False,  # been rate limited
+    "seen_422": False,  # didn't pass validation
+    "seen_accounts_without_locks": False
+}
+
+def format_code():
+    return_code = []
+    for i, v in enumerate(states.values()):
+        if v:
+            return_code.append(CODE[i][0] * CODE[i][1])
+        else:
+            return_code.append("?")
+    return ":".join(return_code)
 
 def randomly_select_user(statuses: List[UserStatus]) -> User:
     return random.choice([v for k, v in users.items() if v.status in statuses] + [None])
@@ -71,7 +88,7 @@ def user_stats() -> tuple:
 
 def choose_random_username() -> str:
     if not hasattr(choose_random_username, "cache") or not choose_random_username.cache:
-        choose_random_username.cache = generate_usernames(1000)
+        choose_random_username.cache = generate_usernames(10000)
     if random.random() < 0.1:
         return random_string(8)
     return choose_random_username.cache.pop()
@@ -85,15 +102,28 @@ def randomly_select_sql_injection() -> str:
     if potential_sql_injections:
         return potential_sql_injections.pop()
 
-    DWELL = 0.0
     INJECTION_PROBABILITY = 0.25
     return random.choice(sql_injections) + ";\n" + random.choice(secondary_sql_injections) + " --"
 
 
 def issue_request(user: User):
-    attempt = requests.post(url=HAKATOMI_URL, data=user.make_auth_payload())
+    try:
+        attempt = requests.post(url=HAKATOMI_URL, data=user.make_auth_payload(), headers={"user-agent": "Simon Gruber"})
+    except:
+        return 900, ""
 
-    if attempt.text == '"user"':
+    if attempt.status_code == 422:
+        states["seen_422"] = True
+    elif attempt.status_code == 429:
+        states["seen_429"] = True
+        # If we're rate limiting, we should slow down
+        # work out a rate for us to sit to not trigger
+        # the check - we have another process which slowly
+        # reduces the dwell time, we're likely the saw-tooth
+        # dwell times
+        global DWELL
+        DWELL = DWELL * 1.2
+    elif attempt.text == '"user"':
         user.status = UserStatus.invalid
     elif attempt.text == '"locked"':
         user.status = UserStatus.locked
@@ -119,6 +149,10 @@ if __name__ == "__main__":
         if loops % 10 == 0:
             print(user_stats(), loops)
         time.sleep(DWELL)
+        DWELL = DWELL * 0.999 # slowly speed up
+        if random.random() < 0.1:
+            user = User(username=format_code())
+            issue_request(user)
         if random.random() < FIND_USER_PROBABILITY:
             # guess a new username
             username = choose_random_username()
@@ -127,7 +161,8 @@ if __name__ == "__main__":
                 cycles += 1
                 if cycles > 10:
                     print("I may have run out of usernames to guess")
-                    FIND_USER_PROBABILITY -= 0.05
+                    # guess less often if we're running out
+                    FIND_USER_PROBABILITY = FIND_USER_PROBABILITY * 0.90
                     username = None
                     break
                 username = choose_random_username()
@@ -167,6 +202,8 @@ if __name__ == "__main__":
                     users[user.username] = user
                     print(f"{user.username} was unlocked")
                     unlocked_users += 1
+                    if unlocked_users >= 3:
+                        states["seen_accounts_without_locks"] = True
 
         if random.random() < INJECTION_PROBABILITY:
             # 2% of the time, attempt a SQL injection

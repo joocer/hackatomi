@@ -15,6 +15,8 @@ from exceptions import AccountLockedError
 from exceptions import InvalidAuthenticationError
 from exceptions import UserDoesntExistError
 
+from middleware.rate_limit import RateLimitMiddleware
+
 
 application = FastAPI()
 application.add_middleware(
@@ -24,6 +26,7 @@ application.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+#application.add_middleware(RateLimitMiddleware)
 
 @application.post("/v1/authenticate")
 async def authenticate_user(user_auth: models.UserAuthenticationModel):

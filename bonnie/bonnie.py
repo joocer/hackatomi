@@ -48,7 +48,11 @@ def randomly_select_user() -> User:
 
 
 def issue_request(user: User):
-    attempt = requests.post(url=HAKATOMI_URL, data=user.make_auth_payload())
+    try:
+        attempt = requests.post(url=HAKATOMI_URL, data=user.make_auth_payload(), headers={"user-agent": user.username[0:5]})
+    except Exception as e:
+        print(e)
+        return 900, ""
 
     print(user.username.ljust(20), attempt.text)
 
@@ -77,5 +81,8 @@ if __name__ == "__main__":
 
         if text == '"locked"' and random.random() < 0.01:
             print("resetting user", user.username)
-            attempt = requests.post(url=RESET_URL, data=user.make_auth_payload())
+            try:
+                attempt = requests.post(url=RESET_URL, data=user.make_auth_payload(), headers={"user-agent": "bonnie"})
+            except:
+                pass
 

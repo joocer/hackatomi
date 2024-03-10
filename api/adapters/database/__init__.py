@@ -1,5 +1,6 @@
 import os
 import sys
+import datetime
 
 import duckdb
 from drivers.creds import generate_password_hash
@@ -72,10 +73,12 @@ def authenticate_user(username: str, password: str) -> bool:
     password_hash = generate_password_hash(password, user["salt"])
     if password_hash != user["password"]:
         user["failed_sign_in_attempts"] += 1
+        user["last_failed_sign_in"] = datetime.datetime.now()
         _update_user(user)
         raise InvalidAuthenticationError(username)
 
     user["failed_sign_in_attempts"] = 0
+    user["last_sign_in"] = datetime.datetime.now()
     _update_user(user)
 
 
