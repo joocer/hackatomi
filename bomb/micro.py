@@ -38,10 +38,21 @@ code_entry_step:int = 0
 
 # Code in a 'while True:' loop repeats forever
 while True:
-    this_time = 25 - int((time.ticks_ms() - start_time) / (1000 * 60))
-    log.add({"this_time": this_time})
-    display.show(Image(format_fives(this_time)))
-    sleep(3000)
+    seconds_left = (26 * 60) - int((time.ticks_ms() - start_time) // 1000)
+    minutes_left = int(seconds_left / 60)
+
+    # seconds_left = seconds_left - 1530
+    if seconds_left < 10:
+        for i in range(9):
+            display.show(str(9 - i))
+            music.pitch(200, 1000)
+            sleep(800)
+        while True:
+            display.show("BANG! ")
+    
+    log.add({"minutes_left": minutes_left, "seconds_left": seconds_left})
+    display.show(Image(format_fives(minutes_left)))
+    sleep(2900)
 
     if button_a.was_pressed() or button_b.was_pressed():
         button, presses = code[code_entry_step]
@@ -63,4 +74,4 @@ while True:
         music.pitch(2000, 100)
 
 while True:
-    display.show("DIFUSED ")
+    display.show("DIFFUSED ")
