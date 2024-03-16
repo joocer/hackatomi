@@ -40,12 +40,19 @@ SELECT *
 
 def _update_user(user):
 
+    def val(v):
+        if isinstance(v, str):
+            return f"'{v}'"
+        if isinstance(v, datetime.datetime):
+            return f"TIMESTAMP '{v.isoformat()}'"
+        return str(v)
+
     # Create the SET part of the SQL statement, excluding 'username'
     set_part = ", ".join(
         [
-            f"{key} = '{value}'" if isinstance(value, str) else f"{key} = {value}"
+            f"{key} = {val(value)}"
             for key, value in user.items()
-            if key not in ("username", "id")
+            if key not in ("username", "id", "password") and value is not None
         ]
     )
 
@@ -101,6 +108,19 @@ def get_signin_stats():
 SELECT COUNT(*) AS count, failed_sign_in_attempts AS attempts
   FROM user_table 
  GROUP BY failed_sign_in_attempts
+"""
+    conn = duckdb.connect(database="hakatomi.duckdb")
+    cursor = conn.cursor()
+    cursor.execute(sql)
+
+    match = cursor.arrow()
+    return match.to_pydict()
+
+def get_signin_fails_last_5_mins():
+    sql = f"""
+SELECT COUNT(*) AS count
+  FROM user_table 
+ WHERE last_failed_sign_in + INTERVAL '5 MINUTES' > CAST(CURRENT_TIMESTAMP AS TIMESTAMP)
 """
     conn = duckdb.connect(database="hakatomi.duckdb")
     cursor = conn.cursor()

@@ -8,13 +8,12 @@ import models
 import uvicorn
 from adapters import database
 from adapters import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from exceptions import AccountLockedError
 from exceptions import InvalidAuthenticationError
 from exceptions import UserDoesntExistError
-
 from middleware.rate_limit import RateLimitMiddleware
 
 
@@ -30,7 +29,9 @@ application.add_middleware(
 
 @application.post("/v1/authenticate")
 async def authenticate_user(user_auth: models.UserAuthenticationModel):
-
+    """
+    The authentication code returns exceptions to inform us why 
+    """
     try:
         database.authenticate_user(user_auth.username, user_auth.password)
     except AccountLockedError:
@@ -48,9 +49,25 @@ async def authenticate_user(user_auth: models.UserAuthenticationModel):
     return "okay"
 
 
+
+
+
+
+
+
+
+
+
+
 @application.get("/v1/measure/signin/success")
 async def get_measure_signin_success():
-    return database.get_signin_stats()
+    locked = database.get_signin_stats()
+    rate = database.get_signin_fails_last_5_mins()
+
+    return {
+        "locked": locked,
+        "rate": rate
+    }
 
 @application.get("/v1/logs/tail")
 async def get_log_tail(size:int = 10):

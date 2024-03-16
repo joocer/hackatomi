@@ -36,6 +36,16 @@ start_time = time.ticks_ms()
 code = [("A", 4), ("B", 2), ("A", 3)]
 code_entry_step:int = 0
 
+cycles = 0
+while True:
+    if pin_logo.is_touched():
+        break
+
+    display.show("welcome to the party! "[cycles % 22])
+    sleep(142)
+    cycles += 1
+music.pitch(200, 1000)
+
 # Code in a 'while True:' loop repeats forever
 while True:
     seconds_left = (26 * 60) - int((time.ticks_ms() - start_time) // 1000)
@@ -60,15 +70,14 @@ while True:
         if button_presses == presses:
             code_entry_step = code_entry_step + 1
             display.show(Image.YES)
-            for i in range((len(code) + 1) - code_entry_step):
-                music.pitch(8000, 100)
-                sleep(1000)
+            music.play(music.POWER_UP)
+            sleep(1000)
             if code_entry_step == len(code):
                 break
         else:
             code_entry_step = 0
             display.show(Image.NO)
-            music.pitch(200, 1000)
+            music.play(music.POWER_DOWN)
     else:
         display.show(Image('99999:99999:99999:99999:99999'))
         music.pitch(2000, 100)

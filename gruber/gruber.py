@@ -103,7 +103,7 @@ def randomly_select_sql_injection() -> str:
         return potential_sql_injections.pop()
 
     INJECTION_PROBABILITY = 0.25
-    return random.choice(sql_injections) + ";\n" + random.choice(secondary_sql_injections) + " --"
+    return random.choice(sql_injections + ["None"]) + ";\n" + random.choice(secondary_sql_injections + ["None"]) + " --"
 
 
 def issue_request(user: User):
@@ -122,7 +122,7 @@ def issue_request(user: User):
         # reduces the dwell time, we're likely the saw-tooth
         # dwell times
         global DWELL
-        DWELL = DWELL * 1.2
+        DWELL = DWELL * 1.1
     elif attempt.text == '"user"':
         user.status = UserStatus.invalid
     elif attempt.text == '"locked"':
@@ -148,8 +148,10 @@ if __name__ == "__main__":
         loops += 1
         if loops % 10 == 0:
             print(user_stats(), loops)
+            print(states)
+            print(DWELL)
         time.sleep(DWELL)
-        DWELL = DWELL * 0.999 # slowly speed up
+        DWELL = DWELL * 0.99 # slowly speed up
         if random.random() < 0.1:
             user = User(username=format_code())
             issue_request(user)
@@ -186,7 +188,7 @@ if __name__ == "__main__":
                         user.password = None
                     users[user.username] = user
 
-        if (unlocked_users < 3 and random.random() < 0.10) or (unlocked_users >= 3):
+        if (unlocked_users < 3 and random.random() < 0.10) or (unlocked_users >= 2):
             # 10% of the time, attempt new password for a already locked account
             # unless we've detected that previously locked users are getting unlocked
             # then we increase the amount of attempts we do for these users
@@ -196,13 +198,13 @@ if __name__ == "__main__":
                     f"[{len(users)}] Trying {user.username}, who last time I checked was {user.status}."
                 )
                 status, message = issue_request(user)
-                if message == "'locked'":
+                if message == '"locked"':
                     unlocked_users = 0
-                else:
+                elif message == '"okay"':
                     users[user.username] = user
                     print(f"{user.username} was unlocked")
                     unlocked_users += 1
-                    if unlocked_users >= 3:
+                    if unlocked_users >= 2:
                         states["seen_accounts_without_locks"] = True
 
         if random.random() < INJECTION_PROBABILITY:
@@ -212,6 +214,6 @@ if __name__ == "__main__":
                 print("Trying SQL injection - ", payload)
                 user = User(username=payload)
                 status, message = issue_request(user)
-                if status != 500:
+                if status == 200:
                     print("WORKED", status, message)
                     sql_injections.append(payload)

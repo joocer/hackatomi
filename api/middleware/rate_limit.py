@@ -1,7 +1,6 @@
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.exceptions import HTTPException
 import heapq
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -10,8 +9,8 @@ from collections import defaultdict
 request_timestamps = defaultdict(list)
 
 # Limit and window size
-REQUEST_LIMIT = 31
-RATE_LIMIT_WINDOW = timedelta(seconds=30)
+REQUEST_LIMIT_PER_WINDOW = 1
+RATE_LIMIT_WINDOW = timedelta(seconds=60)
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -19,7 +18,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         now = datetime.now()
 
         if user_agent in request_timestamps:
-            if len(request_timestamps[user_agent]) >= REQUEST_LIMIT:
+            if len(request_timestamps[user_agent]) >= REQUEST_LIMIT_PER_WINDOW:
                 # Check if the oldest request is within the rate limit window
                 if now - request_timestamps[user_agent][0] < RATE_LIMIT_WINDOW:
                     # Too many requests
